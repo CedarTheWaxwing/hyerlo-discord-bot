@@ -44,6 +44,17 @@ const CHALLENGE_COMMAND = {
   contexts: [0, 2],
 };
 
-const ALL_COMMANDS = [TEST_COMMAND, CHALLENGE_COMMAND];
+// Create a server invite link (restricted further in app.js to OWNER_USER_ID)
+const INVITE_COMMAND = {
+  name: 'invite',
+  description: 'Create a Discord server invite link',
+  type: 1,
+  // Administrator — also enforced by OWNER_USER_ID check in app.js
+  default_member_permissions: '8',
+  integration_types: [0],
+  contexts: [0],
+};
+
+const ALL_COMMANDS = [TEST_COMMAND, CHALLENGE_COMMAND, INVITE_COMMAND];
 
 InstallGlobalCommands(process.env.APP_ID, ALL_COMMANDS);

@@ -58,6 +58,59 @@ app.post('/interactions', verifyKeyMiddleware(process.env.PUBLIC_KEY), async fun
       });
     }
 
+    // "invite" command — owner-only; creates a never-expiring server invite
+    if (name === 'invite') {
+      const userId = req.body.member?.user?.id ?? req.body.user?.id;
+      if (!process.env.OWNER_USER_ID || userId !== process.env.OWNER_USER_ID) {
+        return res.send({
+          type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+          data: {
+            content: 'You cannot use this command.',
+            flags: InteractionResponseFlags.EPHEMERAL,
+          },
+        });
+      }
+
+      const channelId = process.env.INVITE_CHANNEL_ID;
+      if (!channelId) {
+        return res.send({
+          type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+          data: {
+            content: 'INVITE_CHANNEL_ID is not configured.',
+            flags: InteractionResponseFlags.EPHEMERAL,
+          },
+        });
+      }
+
+      try {
+        const inviteRes = await DiscordRequest(`channels/${channelId}/invites`, {
+          method: 'POST',
+          body: {
+            max_age: 0,
+            max_uses: 0,
+            unique: false,
+          },
+        });
+        const invite = await inviteRes.json();
+        return res.send({
+          type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+          data: {
+            content: `Invite link: https://discord.gg/${invite.code}`,
+            flags: InteractionResponseFlags.EPHEMERAL,
+          },
+        });
+      } catch (err) {
+        console.error('Failed to create invite:', err);
+        return res.send({
+          type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+          data: {
+            content: 'Failed to create invite. Check bot permissions and INVITE_CHANNEL_ID.',
+            flags: InteractionResponseFlags.EPHEMERAL,
+          },
+        });
+      }
+    }
+
     console.error(`unknown command: ${name}`);
     return res.status(400).json({ error: 'unknown command' });
   }
