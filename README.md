@@ -126,6 +126,10 @@ Enable **Message Content Intent** under **Bot → Privileged Gateway Intents** s
 
 The existing HTTP interactions server (`/interactions`) continues to run on Railway alongside the Gateway client.
 
+### Health check (uptime / keep-alive)
+
+`GET /health` returns `200` with `{"ok":true}`. It does not call Discord or expose secrets. Use it with an uptime monitor (for example [UptimeRobot](https://uptimerobot.com/) pinging every 5 minutes) to keep a Render free-plan service from sleeping.
+
 ### Tests
 
 ```
