@@ -101,6 +101,41 @@ On the **General Information** tab, there will be an **Interactions Endpoint URL
 
 Click **Save Changes**, and your app should be ready to run 🚀
 
+## Hyerlo QA channel watcher (read-only)
+
+When deployed with Control Center credentials, the bot watches Discord channels named **`feature-requests`** (including forum posts and thread replies) and **`report-a-bug`**, and forwards new human messages to the Hyerlo Control Center API. It does **not** reply, react, or post in Discord.
+
+### Required environment variables
+
+| Variable | Description |
+|----------|-------------|
+| `CONTROL_CENTER_URL` | Base URL of the Control Center (e.g. `https://control.example.com`). Items are sent to `POST ${CONTROL_CENTER_URL}/api/hyerlo-qa-items`. |
+| `CONTROL_CENTER_BOT_API_KEY` | Bearer token for the Control Center bot API (`Authorization: Bearer …`). Never commit this value. |
+
+### Optional environment variables
+
+| Variable | Description |
+|----------|-------------|
+| `FEATURE_REQUESTS_CHANNEL_ID` | Override lookup-by-name for the feature-requests channel |
+| `REPORT_BUG_CHANNEL_ID` | Override lookup-by-name for the report-a-bug channel |
+| `QA_BACKFILL_ON_STARTUP` | Set to `false` to skip backfilling ~100 recent messages when the Gateway connects (default: on). Dedupe keys make backfill safe. |
+
+### Discord Developer Portal
+
+Enable **Message Content Intent** under **Bot → Privileged Gateway Intents** so the bot can read message text in monitored channels.
+
+The existing HTTP interactions server (`/interactions`) continues to run on Railway alongside the Gateway client.
+
+### Health check (uptime / keep-alive)
+
+`GET /health` returns `200` with `{"ok":true}`. It does not call Discord or expose secrets. Use it with an uptime monitor (for example [UptimeRobot](https://uptimerobot.com/) pinging every 5 minutes) to keep a Render free-plan service from sleeping.
+
+### Tests
+
+```
+npm test
+```
+
 ## Other resources
 - Read **[the documentation](https://discord.com/developers/docs/intro)** for in-depth information about API features.
 - Browse the `examples/` folder in this project for smaller, feature-specific code examples

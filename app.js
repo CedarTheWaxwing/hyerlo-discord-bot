@@ -10,6 +10,7 @@ import {
 } from 'discord-interactions';
 import { getRandomEmoji, DiscordRequest } from './utils.js';
 import { getShuffledOptions, getResult } from './game.js';
+import { startChannelWatcher } from './channel-watcher.js';
 
 // Create an express app
 const app = express();
@@ -17,6 +18,10 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 // To keep track of our active games
 const activeGames = {};
+
+app.get('/health', (_req, res) => {
+  res.status(200).json({ ok: true });
+});
 
 /**
  * Interactions endpoint URL where Discord will send HTTP requests
@@ -121,4 +126,8 @@ app.post('/interactions', verifyKeyMiddleware(process.env.PUBLIC_KEY), async fun
 
 app.listen(PORT, () => {
   console.log('Listening on port', PORT);
+});
+
+startChannelWatcher().catch((err) => {
+  console.error('[channel-watcher] Failed to start:', err.message);
 });
