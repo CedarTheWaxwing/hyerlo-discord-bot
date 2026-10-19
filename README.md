@@ -110,7 +110,11 @@ When deployed with Control Center credentials, the bot watches Discord channels 
 | Variable | Description |
 |----------|-------------|
 | `CONTROL_CENTER_URL` | Base URL of the Control Center (e.g. `https://control.example.com`). Items are sent to `POST ${CONTROL_CENTER_URL}/api/hyerlo-qa-items`. |
-| `CONTROL_CENTER_BOT_API_KEY` | Bearer token for the Control Center bot API (`Authorization: Bearer …`). Never commit this value. |
+| `CONTROL_CENTER_BASIC_USER` | Username for Caddy HTTP Basic Auth in front of the Control Center. Used only when **both** this and `CONTROL_CENTER_BASIC_PASSWORD` are set; then requests use `Authorization: Basic …` instead of Bearer. |
+| `CONTROL_CENTER_BASIC_PASSWORD` | Password for Caddy HTTP Basic Auth. Never commit this value. |
+| `CONTROL_CENTER_BOT_API_KEY` | Control Center bot API key. When Basic Auth is **not** configured, sent as `Authorization: Bearer …`. When Basic Auth **is** configured, also sent as `X-Bot-Api-Key` (harmless if the server ignores it). Never commit this value. |
+
+At least one auth method is required: either both Basic Auth variables or `CONTROL_CENTER_BOT_API_KEY` (or both Basic and the bot key).
 
 ### Optional environment variables
 
