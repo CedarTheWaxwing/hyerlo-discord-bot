@@ -23,15 +23,19 @@ export async function startChannelWatcher(options = {}) {
 
   const baseUrl = process.env.CONTROL_CENTER_URL;
   const apiKey = process.env.CONTROL_CENTER_BOT_API_KEY;
+  const basicUser = process.env.CONTROL_CENTER_BASIC_USER;
+  const basicPassword = process.env.CONTROL_CENTER_BASIC_PASSWORD;
   const token = process.env.DISCORD_TOKEN;
+  const hasBasicAuth = Boolean(basicUser && basicPassword);
+  const hasBearerAuth = Boolean(apiKey);
 
   if (!token) {
     console.warn('[channel-watcher] DISCORD_TOKEN missing; QA channel watcher not started.');
     return null;
   }
-  if (!baseUrl || !apiKey) {
+  if (!baseUrl || (!hasBasicAuth && !hasBearerAuth)) {
     console.warn(
-      '[channel-watcher] CONTROL_CENTER_URL or CONTROL_CENTER_BOT_API_KEY missing; QA channel watcher not started.',
+      '[channel-watcher] CONTROL_CENTER_URL missing or no Control Center credentials (set CONTROL_CENTER_BASIC_USER/PASSWORD and/or CONTROL_CENTER_BOT_API_KEY); QA channel watcher not started.',
     );
     return null;
   }
@@ -39,6 +43,8 @@ export async function startChannelWatcher(options = {}) {
   const controlCenter = new ControlCenterClient({
     baseUrl,
     apiKey,
+    basicUser,
+    basicPassword,
     onError,
   });
 

@@ -6,13 +6,42 @@ const INITIAL_BACKOFF_MS = 1000;
  * @typedef {ReturnType<import('./qa-item-mapper.js').mapMessageToQaItem>} QaItem
  */
 
+/**
+ * @param {{ apiKey?: string; basicUser?: string; basicPassword?: string }} creds
+ * @returns {Record<string, string>}
+ */
+export function buildControlCenterAuthHeaders({ apiKey, basicUser, basicPassword }) {
+  /** @type {Record<string, string>} */
+  const headers = {};
+  const useBasic = Boolean(basicUser && basicPassword);
+  if (useBasic) {
+    const token = Buffer.from(`${basicUser}:${basicPassword}`, 'utf8').toString('base64');
+    headers.Authorization = `Basic ${token}`;
+    if (apiKey) {
+      headers['X-Bot-Api-Key'] = apiKey;
+    }
+  } else if (apiKey) {
+    headers.Authorization = `Bearer ${apiKey}`;
+  }
+  return headers;
+}
+
 export class ControlCenterClient {
   /**
-   * @param {{ baseUrl: string; apiKey: string; fetchImpl?: typeof fetch; onError?: (err: Error, context: string) => void }} options
+   * @param {{ baseUrl: string; apiKey?: string; basicUser?: string; basicPassword?: string; fetchImpl?: typeof fetch; onError?: (err: Error, context: string) => void }} options
    */
-  constructor({ baseUrl, apiKey, fetchImpl = fetch, onError = defaultOnError }) {
+  constructor({
+    baseUrl,
+    apiKey,
+    basicUser,
+    basicPassword,
+    fetchImpl = fetch,
+    onError = defaultOnError,
+  }) {
     this.baseUrl = baseUrl.replace(/\/$/, '');
     this.apiKey = apiKey;
+    this.basicUser = basicUser;
+    this.basicPassword = basicPassword;
     this.fetchImpl = fetchImpl;
     this.onError = onError;
     /** @type {QaItem[]} */
@@ -64,12 +93,25 @@ export class ControlCenterClient {
         const res = await this.fetchImpl(`${this.baseUrl}/api/hyerlo-qa-items`, {
           method: 'POST',
           headers: {
-            Authorization: `Bearer ${this.apiKey}`,
+            ...buildControlCenterAuthHeaders({
+              apiKey: this.apiKey,
+              basicUser: this.basicUser,
+              basicPassword: this.basicPassword,
+            }),
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({ items: batch }),
         });
         if (res.ok) {
+          return;
+        }
+        if (res.status === 401) {
+          this.onError(
+            new Error(
+              'Control Center rejected credentials, check CONTROL_CENTER_BASIC_USER/PASSWORD',
+            ),
+            'postBatch',
+          );
           return;
         }
         const body = await safeReadText(res);
